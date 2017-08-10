@@ -3,51 +3,82 @@
 
 <img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
 
-Overview
+
+## Project: **Finding Lane Lines on the Road** 
+---
+The process pipe line is as follows:
+
+
+1. Filter the colors of interest (white and yellow for lane markings)
+2. Convert the image to gray scale
+3. Blur the image and extract edges using Canny edge detector
+4. Use Hough transform to extract lines
+5. Average the extracted lines and overlay it with the original image
+
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
+### Color Selection
+The lane markings are strictly in White or Yellow and hence we need to filter out only the pixels which are white or yellow. I originally began with RGB space and after further exploration realized HLS color space works better.
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
+### RGB Image
+For white I chose the upper and lower limits as **[195, 195, 195]** and **[255, 255, 255]** respectively. Similarly, for yellow, **[200, 200, 0]** and **[255, 255, 200]**
 
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
+![Alt text](/examples/rgb.png?raw=true "RGB Space")
 
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
-
-
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
+### HLS Space 
+In HLS space, white and yellow pixels are recognized better. All further processing will be performed in HLS.
 
 
-The Project
----
+![Alt text](/examples/hls.png?raw=true "HLS Space")
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/83ec35ee-1e02-48a5-bdb7-d244bd47c2dc/lessons/8c82408b-a217-4d09-b81d-1bda4c6380ef/concepts/4f1870e0-3849-43e4-b670-12e6f2d4b7a7) if you haven't already.
+To detect edges, we only need the change in intensity of the pixel. So we can safely convert the image to grayscale to make the algorithm faster.
 
-**Step 2:** Open the code in a Jupyter Notebook
+![Alt text](/examples/gray.png?raw=true "Grayscale image")
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
+To avoid noises in the edge detection, we need to smoothen out the edges. Gaussian filtering with a kernel size of 9 is applied for this task.
 
-`> jupyter notebook`
+![Alt text](/examples/blur.png?raw=true "Blurred image")
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
+### Edge Detection
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
+Canny edge detector was employed to extract the edges from the image using the intensity gradient. The Canny Edge detector was developed by John F. Canny in 1986. Canny algorithm satisfies three main criteria:
+* Low error rate: Meaning a good detection of only existent edges.
+* Good localization: The distance between edge pixels detected and real edge pixels have to be minimized.
+* Minimal response: Only one detector response per edge.
 
+![Alt text](/examples/edge.png?raw=true "Detected edges")
+
+### Region of Interest
+
+Since the lane markings are usually within the center-lowerhalf of the image (atleast for the given situation), I defined a polygon which encompasses the region that interests us. This ensures unwanted edges in the image like sign boards are neglected. 
+
+
+![Alt text](/examples/roi.png?raw=true "Polygonal ROI")
+
+### Line Extraction
+
+I then applied Hough transform to extract lines from the edge images. 
+
+
+### Draw Lines 
+Now that we have the line coordinates in (x,y), we need to look into the slopes of these lines to classify them as left and right lane markers.
+
+![Alt text](/examples/lines.png?raw=true "Hough lines")
+
+### Slopes
+
+Since the (0,0) is top left, a positive slope implies that the line belongs to right lane. Once the slopes have been computed, the lines are averaged. Weights are assigned to each line based on its length. This makes sure that longer lines (possible lane markings) are preferred shorter ones (errors and other possible edge lines).
+
+Some lane lines are only partially recognized and some are dashed white lane markings. So, once the lane lines are averaged, they are extrapolated to highlight the entire lane line from the bottom of the image to the centre.
+
+
+![Alt text](/examples/lanes.png?raw=true "Detected lanes")
+
+
+## Reflections
+
+The project makes a lot of assumptions on the input camera feed. Currently, all lane lines are assumed to be straight lines, which is most likely to be the case unless the car is traversing on steep curves. 
+
+Also, there is no contingency in effect if there is a loss of camera feed for few frames. One possible solution could be storing past slopes and averaging them to fill in when there is frame loss.
