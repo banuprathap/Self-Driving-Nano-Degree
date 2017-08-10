@@ -5,7 +5,7 @@
 
 
 ## Project: **Finding Lane Lines on the Road** 
----
+
 The process pipe line is as follows:
 
 
@@ -15,7 +15,6 @@ The process pipe line is as follows:
 4. Use Hough transform to extract lines
 5. Average the extracted lines and overlay it with the original image
 
----
 
 ### Color Selection
 The lane markings are strictly in White or Yellow and hence we need to filter out only the pixels which are white or yellow. I originally began with RGB space and after further exploration realized HLS color space works better.
@@ -23,23 +22,23 @@ The lane markings are strictly in White or Yellow and hence we need to filter ou
 ### RGB Image
 For white I chose the upper and lower limits as **[195, 195, 195]** and **[255, 255, 255]** respectively. Similarly, for yellow, **[200, 200, 0]** and **[255, 255, 200]**
 
-![Alt text](/examples/rgb.png?raw=true "RGB Space")
+![RGB Space](./examples/rgb.png?raw=true )
 
 ### HLS Space 
 In HLS space, white and yellow pixels are recognized better. All further processing will be performed in HLS.
 
 
-![Alt text](/examples/hls.png?raw=true "HLS Space")
+![HLS Space](./examples/hls.png?raw=true )
 
 
 To detect edges, we only need the change in intensity of the pixel. So we can safely convert the image to grayscale to make the algorithm faster.
 
-![Alt text](/examples/gray.png?raw=true "Grayscale image")
+![Grayscale image](./examples/gray.png?raw=true )
 
 
 To avoid noises in the edge detection, we need to smoothen out the edges. Gaussian filtering with a kernel size of 9 is applied for this task.
 
-![Alt text](/examples/blur.png?raw=true "Blurred image")
+![Blurred image](./examples/blur.png?raw=true )
 
 ### Edge Detection
 
@@ -48,14 +47,14 @@ Canny edge detector was employed to extract the edges from the image using the i
 * Good localization: The distance between edge pixels detected and real edge pixels have to be minimized.
 * Minimal response: Only one detector response per edge.
 
-![Alt text](/examples/edge.png?raw=true "Detected edges")
+![Detected edges](./examples/edge.png?raw=true )
 
 ### Region of Interest
 
 Since the lane markings are usually within the center-lowerhalf of the image (atleast for the given situation), I defined a polygon which encompasses the region that interests us. This ensures unwanted edges in the image like sign boards are neglected. 
 
 
-![Alt text](/examples/roi.png?raw=true "Polygonal ROI")
+![Polygonal ROI](./examples/roi.png?raw=true )
 
 ### Line Extraction
 
@@ -65,7 +64,7 @@ I then applied Hough transform to extract lines from the edge images.
 ### Draw Lines 
 Now that we have the line coordinates in (x,y), we need to look into the slopes of these lines to classify them as left and right lane markers.
 
-![Alt text](/examples/lines.png?raw=true "Hough lines")
+![Hough lines](./examples/lines.png?raw=true )
 
 ### Slopes
 
@@ -74,7 +73,7 @@ Since the (0,0) is top left, a positive slope implies that the line belongs to r
 Some lane lines are only partially recognized and some are dashed white lane markings. So, once the lane lines are averaged, they are extrapolated to highlight the entire lane line from the bottom of the image to the centre.
 
 
-![Alt text](/examples/lanes.png?raw=true "Detected lanes")
+![Detected lanes](./examples/lanes.png?raw=true )
 
 
 ## Reflections
